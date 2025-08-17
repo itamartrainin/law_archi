@@ -5,7 +5,7 @@ from tqdm import tqdm
 from evaluate_is_related import is_related_mp
 
 if __name__ == '__main__':
-    work_dir = '/Users/itamartrainin/data/law_human_freedom'
+    work_dir = '/cs/labs/oabend/itamar.trainin/data/law_human_freedom'
 
     documents = [
         MeetingTranscript(work_dir + '/pdf/3.pdf', [[1, 25]]),
