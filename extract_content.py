@@ -7,10 +7,10 @@ from config import base_dir
 
 if __name__ == '__main__':
     documents = [
-        MeetingTranscript(base_dir + '/pdf/3.pdf', [[1]]),
-        # MeetingTranscript(work_dir + '/pdf/3.pdf', [[1, 25]]),
-        # MeetingTranscript(work_dir + '/pdf/4.pdf', [[28, 31]]),
-        # MeetingTranscript(work_dir + '/pdf/5.pdf', [[26, 27]])
+        # MeetingTranscript(base_dir + '/pdf/3.pdf', [[1]]),
+        MeetingTranscript(base_dir + '/pdf/3.pdf', [[1, 25]]),
+        MeetingTranscript(base_dir + '/pdf/4.pdf', [[28, 31]]),
+        MeetingTranscript(base_dir + '/pdf/5.pdf', [[26, 27]])
     ]
 
     pd.to_pickle(documents, base_dir + '/documents_no_related.pkl')
