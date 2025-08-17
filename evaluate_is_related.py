@@ -158,11 +158,11 @@ def is_related(comment, context, model='claude-opus-4-20250514', min_words=5):
     resp = extract_json(response['choices'][0]['message']['content'])
     return pd.Series([resp['type'], resp['reasoning'], resp['comment_interpretation']])
 
-def is_related_mp(speaker_side):
-    return is_related(speaker_side['translated'], document.pages[speaker_side['page']]['translated'])
+def is_related_mp(args):
+    return is_related(*args)
 
-# def do_mp(speaker_side):
-#     return is_related(speaker_side['translated'], document.pages[speaker_side['page']].translated, model='claude-opus-4-20250514')
+def do_mp(speaker_side):
+    return is_related(speaker_side['translated'], document.pages[speaker_side['page']].translated, model='claude-opus-4-20250514')
 
 if __name__ == '__main__':
     litellm.cache = Cache()

@@ -18,4 +18,7 @@ def pdf_to_txt(pdf_path):
     return content
 
 def pdf_to_pages(pdf_path):
-    return pd.DataFrame([[i, page] for i, page in tqdm(enumerate(read_pdf(pdf_path)), desc='Converting pdf to pages')], columns=['page_num', 'content'])
+    df = [[i, i, page] for i, page in tqdm(enumerate(read_pdf(pdf_path)), desc='Converting pdf to pages')]
+    df = pd.DataFrame(df, columns=['index_col', 'page_num', 'content'])
+    df = df.set_index('index_col')
+    return df

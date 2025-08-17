@@ -28,7 +28,9 @@ class MeetingTranscript:
         self.raw_pages = pdf_to_pages(path_to_file)
 
         self.pages = self.filter_relevant_pages()
-        self.pages['translated'] = self.pages['content'].apply(translate)
+
+        print('Translating Pages')
+        self.pages['translated'] = self.pages['content'].progress_apply(translate)
 
         self.speaker_sides = self.get_document_speaker_sides()
 
@@ -45,7 +47,7 @@ class MeetingTranscript:
         filtered_pages = []
         for one_range in self.relevant_pages:
             if len(one_range) == 1:
-                filtered_pages.append(self.raw_pages[one_range[0]])
+                filtered_pages.append(self.raw_pages[self.raw_pages.index == 1])
             elif len(one_range) == 2:
                 filtered_pages.append(self.raw_pages[one_range[0]:one_range[1] + 1])
             else:
