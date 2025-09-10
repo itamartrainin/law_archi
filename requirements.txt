@@ -5,4 +5,4 @@ streamlit-plotly-events==0.0.6
 altair==5.5.0
 pandas==2.2.3
 numpy==1.26.4
-
+pyvis==0.3.2
