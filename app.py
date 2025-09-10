@@ -244,7 +244,7 @@ with c1:
 
     # Altair bar chart
     chart = alt.Chart(vc).mark_bar().encode(
-        x=alt.X('speaker:N', sort=None, axis=alt.Axis(labelAngle=45)),
+        x=alt.X('speaker:N', sort=None, axis=alt.Axis(labelAngle=45, labelPadding=50)),
         y=alt.Y('count:Q')
     )
 
@@ -261,7 +261,7 @@ with c2:
 
     # Altair bar chart
     chart = alt.Chart(vc).mark_bar().encode(
-        x=alt.X('position:N', sort=None, axis=alt.Axis(labelAngle=45)),
+        x=alt.X('position:N', sort=None, axis=alt.Axis(labelAngle=45, labelPadding=50)),
         y=alt.Y('count:Q')
     )
 
