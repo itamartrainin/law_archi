@@ -139,7 +139,14 @@ for doc in st.session_state.documents:
     all_orig_values.extend(orig_vals)
     all_titles.extend([title]*len(orig_vals))
     all_msg_no.extend(list(range(len(orig_vals))))
-    hover_text.extend([f"Document: {title}<br>Msg No.: {i + 1}<br>Value: {v}" for i, v in enumerate(orig_vals)])
+    hover_text.extend([
+        f"שם מסמך: {title}<br> "
+        f"מספר הודעה: {i + 1}<br>"
+        f"דובר: {row['speaker']}<br>"
+        f" תפקיד: {row['position']}<br>"
+        f"האם השפיע על שינוי: {'כן' if row['is_related'] == 1 else 'לא'}"
+        for i, row in doc.speaker_sides.iterrows()
+    ])
     doc_indices.extend([title] * len(vals))
     doc_boundaries.append(current_index)
     doc_titles.append(title)
@@ -237,7 +244,7 @@ with c1:
 
     # Altair bar chart
     chart = alt.Chart(vc).mark_bar().encode(
-        x=alt.X('speaker:N', sort=None),
+        x=alt.X('speaker:N', sort=None, axis=alt.Axis(labelAngle=45)),
         y=alt.Y('count:Q')
     )
 
@@ -254,7 +261,7 @@ with c2:
 
     # Altair bar chart
     chart = alt.Chart(vc).mark_bar().encode(
-        x=alt.X('position:N', sort=None),
+        x=alt.X('position:N', sort=None, axis=alt.Axis(labelAngle=45)),
         y=alt.Y('count:Q')
     )
 
