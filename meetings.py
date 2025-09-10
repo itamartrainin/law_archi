@@ -27,12 +27,15 @@ class MeetingTranscript:
 
         self.raw_pages = pdf_to_pages(path_to_file)
 
+        self.front_page = self.raw_pages.iloc[0]
         self.pages = self.filter_relevant_pages()
 
-        print('Translating Pages')
-        self.pages['translated'] = self.pages['content'].progress_apply(translate)
+        self.do_translate()
+        self.do_extract_speaker_sides()
+        self.do_extract_participants()
+        self.do_extract_ref_participants()
 
-        self.speaker_sides = self.get_document_speaker_sides()
+        print('Init Done.')
 
         # self.font_page = self.raw_pages.iloc[0]
         # self.pages = self.pages[:2]  # todo: remove this!
@@ -40,8 +43,23 @@ class MeetingTranscript:
         # self.agenda_topics = self.get_agenda_topics()
         # self.pages = self.add_topic_markings()
         # self.speaker_sides = self.get_document_speaker_sides()
-        # self.participants = self.get_participants()
-        # self.participant_map = self.get_participant_mapping()
+
+    def do_translate(self):
+        print('Translating Pages')
+        self.pages['translated'] = self.pages['content'].progress_apply(translate)
+        self.front_page['translated'] = translate(self.front_page['content'])
+
+    def do_extract_speaker_sides(self):
+        self.speaker_sides = self.get_document_speaker_sides()
+
+    def do_extract_participants(self):
+        self.participants = self.get_participants()
+        self.clean_participants_list_str = '\n'.join([p['name'] for p in self.participants.values()])
+        self.participant_map = self.get_participant_mapping()
+        self.speaker_sides[['norm_speaker', 'position', 'title']] = self.speaker_sides['speaker'].apply(self.map_speakers)
+
+    def do_extract_ref_participants(self):
+        self.speaker_sides[['ref_participants', 'norm_ref_participants']] = self.speaker_sides['content'].progress_apply(self.extract_ref_participant)
 
     def filter_relevant_pages(self):
         filtered_pages = []
@@ -102,17 +120,26 @@ class MeetingTranscript:
         You will be given one page from a **Hebrew** transcript of an Israeli government discussion about newly proposed laws. 
         This page includes lists of participants in the discussion.
 
-        Extract the participant names under "חברי הועדה" or "מוזמנים"
+        Extract the participant names under "חברי הועדה", "מוזמנים", "יועץ משפטי", "מזכיר הוועדה", or "קצרן"
+        In addition extract their title if available. The title is noted after the name and is separated by a '-'.
 
         ** Output JSON format: **
         [
-            <first participant name>,
-            <second participant name>,
+            {{ 
+                "name": <first participant name>,
+                "position": <is first participant from "חברי הועדה" or "מוזמנים">,
+                "title": <first participant title>
+            }},
+            {{ 
+                "name": <second participant name>,
+                "position": <is second participant from "חברי הועדה" or "מוזמנים">,
+                "title": <second participant title>
+            }},
             ...
         ]
 
         Page Content: 
-        "{self.font_page}"
+        "{self.front_page['content']}"
         """.strip()
 
         response = completion(
@@ -121,7 +148,8 @@ class MeetingTranscript:
             messages=[{"content": prompt, "role": "user"}]
         )
 
-        return extract_json(response['choices'][0]['message']['content'])
+        resp = extract_json(response['choices'][0]['message']['content'])
+        return {p['name']: p for p in resp}
 
     def get_participant_mapping(self):
         mapping = {}
@@ -131,25 +159,20 @@ class MeetingTranscript:
         return mapping
 
     def get_static_name(self, query_name):
-        static_names_list = '\n'.join(self.participants)
-
         prompt = f"""
         You are a helpful assistant.
         You will be presented with a static list of names in **Hebrew** and a separate query name also in **Hebrew** and a separate query name also in **Hebrew**.
         Indicate which name in the list best matches the query name.
 
         Static Names List: 
-        "{static_names_list}"
+        "{self.clean_participants_list_str}"
 
         Query Name: "{query_name}"
 
         ** Output JSON format: **
-        [
-            {{
-                "name": "<name from list that best matches Query Name>",
-            }},
-            ...
-        ]
+        {{
+            "name": "<name from list that best matches Query Name>"
+        }}
         """.strip()
 
         response = completion(
@@ -158,7 +181,14 @@ class MeetingTranscript:
             messages=[{"content": prompt, "role": "user"}]
         )
 
-        return extract_json(response['choices'][0]['message']['content'])
+        try:
+            return extract_json(response['choices'][0]['message']['content'])['name']
+        except:
+            return None
+
+    def map_speakers(self, speaker):
+        mapped_speaker = self.participants[self.participant_map[speaker]]
+        return pd.Series([mapped_speaker['name'], mapped_speaker['position'], mapped_speaker['title']])
 
     def get_agenda_topics(self):
         prompt = f"""
@@ -178,7 +208,7 @@ class MeetingTranscript:
         ]
 
         Document Content:
-        "{self.font_page}"
+        "{self.front_page}"
         """.strip()
 
         response = completion(
@@ -244,3 +274,34 @@ class MeetingTranscript:
             return False
         else:
             return False
+
+    def extract_ref_participant(self, comment):
+        prompt = f"""
+        You are a helpful assistant.
+        You will be given a transcription in **Hebrew** of a person talking. 
+        The person who is talking may be referencing other people.
+        
+        Your task is to extract all the people referenced by the speaker.
+        If a person is mentioned multiple times, include the name multiple times in the list.
+
+        ** Output JSON format: **
+        [
+            "<first person name>"
+            "<second person name>"
+            ...
+        ]
+        
+        Hebrew Transcription: 
+        "{comment}"
+        """.strip()
+
+        response = completion(
+            model=self.model,
+            temperature=0,
+            messages=[{"content": prompt, "role": "user"}]
+        )
+
+        names = extract_json(response['choices'][0]['message']['content'])
+        normalized_names = [self.get_static_name(n) for n in names]
+
+        return pd.Series([names, normalized_names])

@@ -95,7 +95,8 @@ Following the change, the phrase “democratic state” was replaced with “Jew
 """
 
 #%%
-def is_related(comment, context, model='claude-opus-4-20250514', min_words=5):
+# def is_related(comment, context, model='claude-opus-4-20250514', min_words=5):
+def is_related(comment, context, model='gpt-5', min_words=5):
     prompt = f"""
     You are a helpful assistant.
     You will be given a comment said by a committee member of the Israeli government, during a discussion about newly proposed laws. 
@@ -159,7 +160,11 @@ def is_related(comment, context, model='claude-opus-4-20250514', min_words=5):
     return pd.Series([resp['type'], resp['reasoning'], resp['comment_interpretation']])
 
 def is_related_mp(args):
-    return is_related(*args)
+    try:
+        return is_related(*args)
+    except Exception as e:
+        print('is_related_mp FAILED. ', args)
+        return None
 
 def do_mp(speaker_side):
     return is_related(speaker_side['translated'], document.pages[speaker_side['page']].translated, model='claude-opus-4-20250514')
