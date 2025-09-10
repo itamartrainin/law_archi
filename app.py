@@ -113,6 +113,7 @@ st.markdown('### הערות שהשפיעו על השינוי על ציר-הזמ�
 
 
 smoothing = st.toggle('בטל קיבוץ', value=False)
+position_colors = st.toggle('הצג צבעים לפי תפקידים', value=False)
 # c1, c2, _ = st.columns([1,2,7])
 # with c1:
 #     smoothing = st.toggle('החלקה', value=True)
@@ -120,10 +121,23 @@ smoothing = st.toggle('בטל קיבוץ', value=False)
 #     window_size = st.number_input("גודל חלון", value=5)
 #     k = st.number_input("מספר מינימלי של ערכים 1 בחלון", value=3)
 
+def get_color(row):
+    if position_colors:
+        if row['position'] == 'חברי הועדה':
+            return '#FFA500'
+        else:
+            return '#008000'
+    else:
+        if row['is_related'] == 1:
+            return '#FA5053'
+        else:
+            return '#6A5ACD'
+
 all_values = []
 all_orig_values = []
 all_titles = []
 all_msg_no = []
+all_colors = []
 hover_text = []
 doc_indices = []
 doc_boundaries = []
@@ -139,6 +153,7 @@ for doc in st.session_state.documents:
     all_orig_values.extend(orig_vals)
     all_titles.extend([title]*len(orig_vals))
     all_msg_no.extend(list(range(len(orig_vals))))
+    all_colors.extend([get_color(row) for i, row in doc.speaker_sides.iterrows()])
     hover_text.extend([
         f"שם מסמך: {title}<br> "
         f"מספר הודעה: {i + 1}<br>"
@@ -167,7 +182,8 @@ fig.add_trace(go.Scatter(
     marker=dict(
         size=4,
         # size=[4 if v == 1 else 0 for v in all_orig_values],
-        color=['#FA5053' if v == 1 else '#6A5ACD' for v in all_orig_values]
+        # color=['#FA5053' if v == 1 else '#6A5ACD' for v in all_orig_values]
+        color=all_colors
     ),
     line=dict(color='#6A5ACD', width=0.5),
     # name="Binary Value"
@@ -210,6 +226,8 @@ fig.update_layout(
     hovermode="closest",
 )
 
+st.image("legend.png", width=400)
+
 selected_points = plotly_events(fig, click_event=True, hover_event=False)
 if selected_points:
     doc_ix = st.session_state.titles.index(all_titles[selected_points[0]['x']])
@@ -219,6 +237,8 @@ if selected_points:
         st.session_state.msg_ix = msg_ix
         st.session_state.selected_doc_ix = doc_ix
         st.session_state.selected_msg_ix = msg_ix
+
+
 
 ############################################
 #              Speaker Counts              #
